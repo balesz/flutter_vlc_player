@@ -12,102 +12,76 @@ import io.flutter.embedding.engine.plugins.activity.ActivityPluginBinding;
 
 public class FlutterVlcPlayerPlugin implements FlutterPlugin, ActivityAware {
 
-    private static FlutterVlcPlayerFactory flutterVlcPlayerFactory;
-    private FlutterPluginBinding flutterPluginBinding;
-
     private static final String VIEW_TYPE = "flutter_video_plugin/getVideoView";
 
-    public FlutterVlcPlayerPlugin() {
-    }
+    private FlutterVlcPlayerFactory flutterVlcPlayerFactory;
 
     @SuppressWarnings("deprecation")
     public static void registerWith(io.flutter.plugin.common.PluginRegistry.Registrar registrar) {
-        if (flutterVlcPlayerFactory == null) {
-            flutterVlcPlayerFactory =
-                    new FlutterVlcPlayerFactory(
-                            registrar.messenger(),
-                            registrar.textures(),
-                            registrar::lookupKeyForAsset,
-                            registrar::lookupKeyForAsset
-                    );
-            registrar
-                    .platformViewRegistry()
-                    .registerViewFactory(
-                            VIEW_TYPE,
-                            flutterVlcPlayerFactory
-                    );
-        }
+        FlutterVlcPlayerFactory flutterVlcPlayerFactory =
+                new FlutterVlcPlayerFactory(
+                        registrar.messenger(),
+                        registrar.textures(),
+                        registrar::lookupKeyForAsset,
+                        registrar::lookupKeyForAsset
+                );
+        registrar
+                .platformViewRegistry()
+                .registerViewFactory(
+                        VIEW_TYPE,
+                        flutterVlcPlayerFactory
+                );
         registrar.addViewDestroyListener(view -> {
-            stopListening();
+            flutterVlcPlayerFactory.stopListening();
             return false;
         });
-        //
-        startListening();
+        flutterVlcPlayerFactory.startListening();
     }
 
     @Override
     public void onAttachedToEngine(@NonNull FlutterPluginBinding binding) {
-        flutterPluginBinding = binding;
-
-        //
-        if (flutterVlcPlayerFactory == null) {
-            final FlutterInjector injector = FlutterInjector.instance();
-            //
-            flutterVlcPlayerFactory =
-                    new FlutterVlcPlayerFactory(
-                            flutterPluginBinding.getBinaryMessenger(),
-                            flutterPluginBinding.getTextureRegistry(),
-                            injector.flutterLoader()::getLookupKeyForAsset,
-                            injector.flutterLoader()::getLookupKeyForAsset
-                    );
-            flutterPluginBinding
-                    .getPlatformViewRegistry()
-                    .registerViewFactory(
-                            VIEW_TYPE,
-                            flutterVlcPlayerFactory
-                    );
-            //
-        }
-        startListening();
+        final FlutterInjector injector = FlutterInjector.instance();
+        flutterVlcPlayerFactory =
+                new FlutterVlcPlayerFactory(
+                        binding.getBinaryMessenger(),
+                        binding.getTextureRegistry(),
+                        injector.flutterLoader()::getLookupKeyForAsset,
+                        injector.flutterLoader()::getLookupKeyForAsset
+                );
+        binding
+                .getPlatformViewRegistry()
+                .registerViewFactory(
+                        VIEW_TYPE,
+                        flutterVlcPlayerFactory
+                );
+        flutterVlcPlayerFactory.startListening();
     }
 
     @Override
     public void onDetachedFromEngine(@NonNull FlutterPluginBinding binding) {
-        stopListening();
-        //
-
-        flutterPluginBinding = null;
+        flutterVlcPlayerFactory.stopListening();
+        flutterVlcPlayerFactory = null;
     }
 
     @RequiresApi(api = Build.VERSION_CODES.N)
     @Override
     public void onAttachedToActivity(@NonNull ActivityPluginBinding binding) {
+        flutterVlcPlayerFactory.startListening();
     }
 
     @Override
     public void onDetachedFromActivityForConfigChanges() {
+        flutterVlcPlayerFactory.stopListening();
     }
 
     @RequiresApi(api = Build.VERSION_CODES.N)
     @Override
     public void onReattachedToActivityForConfigChanges(@NonNull ActivityPluginBinding binding) {
+        flutterVlcPlayerFactory.startListening();
     }
 
     @Override
     public void onDetachedFromActivity() {
-    }
-
-    // extra methods
-
-    private static void startListening() {
-        if (flutterVlcPlayerFactory != null)
-            flutterVlcPlayerFactory.startListening();
-    }
-
-    private static void stopListening() {
-        if (flutterVlcPlayerFactory != null) {
-            flutterVlcPlayerFactory.stopListening();
-            flutterVlcPlayerFactory = null;
-        }
+        flutterVlcPlayerFactory.stopListening();
     }
 }
